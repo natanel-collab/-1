@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>החופש לבחור</title>
 <!-- PWA -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -30,6 +30,20 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
+  --mode:dark;
+}
+[data-theme="light"]{
+  --bg:#f2f2f7;--bg2:#ffffff;--bg3:#e5e5ea;
+  --s1:rgba(0,0,0,0.04);--s2:rgba(0,0,0,0.07);
+  --b1:rgba(0,0,0,0.1);--b2:rgba(0,0,0,0.18);
+  --txt:#1c1c1e;--txt2:#6d6d72;--txt3:#aeaeb2;
+}
+[data-theme="light"] #topnav{background:rgba(242,242,247,0.9)}
+[data-theme="light"] #tabbar{background:rgba(242,242,247,0.95)}
+[data-theme="light"] #toast{background:#ffffff}
+[data-theme="light"] .sheet{background:#ffffff}
+[data-theme="light"] #loading{background:#f2f2f7}
+:root{
   --bg:#000;--bg2:#141414;--bg3:#1c1c1e;
   --s1:rgba(255,255,255,0.05);--s2:rgba(255,255,255,0.09);
   --b1:rgba(255,255,255,0.08);--b2:rgba(255,255,255,0.15);
@@ -40,7 +54,7 @@
   --ylw:#ffd60a;--pur:#bf5af2;--pur-d:rgba(191,90,242,0.12);
   --r:18px;--rs:12px;
 }
-html,body{height:100%;-webkit-text-size-adjust:100%}
+html,body{height:100%;-webkit-text-size-adjust:100%;overscroll-behavior:none}
 body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var(--txt);
   -webkit-font-smoothing:antialiased;direction:rtl;overflow:hidden}
 
@@ -469,7 +483,15 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
       </div>
 
       <div class="freedom">
-        <div class="freedom-tag">⚡ מד החופש</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+          <div class="freedom-tag" style="margin-bottom:0">⚡ מד החופש</div>
+          <div onclick="C('freedom-tip').style.display=C('freedom-tip').style.display==='none'?'block':'none'"
+            style="font-size:.65rem;color:var(--grn);cursor:pointer;opacity:.7">מה זה? ℹ️</div>
+        </div>
+        <div id="freedom-tip" style="display:none;font-size:.7rem;color:var(--grn);background:rgba(48,209,88,0.08);border-radius:8px;padding:.5rem .7rem;margin-bottom:.6rem;line-height:1.5">
+          מחושב לפי: <strong>יתרה כוללת ÷ ממוצע הוצאות חודשי</strong><br>
+          כמה חודשים תוכל לחיות מהחסכונות שלך ללא הכנסה
+        </div>
         <div class="freedom-num" id="fr-num">–</div>
         <div class="freedom-sub" id="fr-sub">חודשים של חופש כלכלי</div>
         <div class="fbar"><div class="fbar-fill" id="fr-bar" style="width:0%"></div></div>
@@ -549,6 +571,10 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
       <div id="insights"></div>
       <div class="card" style="cursor:pointer;text-align:center" onclick="exportCSV()">
         <span>📤</span> <span style="font-size:.82rem;font-weight:600">ייצוא ל-CSV</span>
+      </div>
+      <div style="background:var(--s1);border:.5px solid var(--b1);border-radius:12px;padding:.75rem 1rem;margin-bottom:.6rem">
+        <div style="font-size:.65rem;font-weight:600;color:var(--txt3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.3rem">⚠️ הערה חשובה</div>
+        <div style="font-size:.72rem;color:var(--txt2);line-height:1.6">האפליקציה מיועדת לניהול אישי בלבד ואינה מהווה תחליף לייעוץ פיננסי מקצועי. המידע המוצג הוא למטרות מעקב אישי בלבד.</div>
       </div>
     </div></div>
 
@@ -700,6 +726,24 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
     <button onclick="saveGoal()" style="width:100%;margin-top:.4rem;padding:.85rem;border-radius:var(--rs);background:var(--blu);color:#fff;font-family:inherit;font-size:.92rem;font-weight:700;border:none;cursor:pointer">הוסף יעד</button>
   </div></div>
 
+  <!-- CUSTOM CATEGORY MODAL -->
+  <div class="ov" id="ov-cat" onclick="if(event.target===this)C('ov-cat').classList.remove('on')">
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-title">קטגוריות מותאמות</div>
+    <div id="custom-cats-list" style="margin-bottom:1rem"></div>
+    <div style="font-size:.78rem;color:var(--txt2);margin-bottom:.5rem">הוסף קטגוריה חדשה:</div>
+    <div class="field"><span class="fi">📝</span>
+      <input type="text" id="new-cat-name" placeholder="שם הקטגוריה" maxlength="20"
+        style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:.88rem;font-family:inherit;direction:rtl"></div>
+    <div class="field"><span class="fi">🎨</span>
+      <input type="text" id="new-cat-icon" placeholder="אמוג׳י (למשל 🏋️)" maxlength="4"
+        style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:1.2rem;font-family:inherit;direction:rtl">
+      <input type="color" id="new-cat-color" value="#30d158"
+        style="width:32px;height:32px;border:none;border-radius:8px;cursor:pointer;padding:0;background:none"></div>
+    <button onclick="addCustomCat()" style="width:100%;padding:.85rem;border-radius:var(--rs);background:var(--blu);color:#fff;font-family:inherit;font-size:.92rem;font-weight:700;border:none;cursor:pointer">הוסף קטגוריה</button>
+  </div></div>
+
   <!-- GOAL PROGRESS MODAL -->
   <div class="ov" id="ov-gp" onclick="if(event.target===this)C('ov-gp').classList.remove('on')">
   <div class="sheet">
@@ -724,14 +768,33 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
       <div class="prof-family-name" id="prof-family-name">—</div>
       <div class="invite-display">
         <div>
-          <div style="font-size:.65rem;color:var(--txt2);margin-bottom:.2rem">קוד הזמנה לאישתך</div>
+          <div style="font-size:.65rem;color:var(--txt2);margin-bottom:.2rem">קוד הזמנה משפחתי</div>
           <div class="invite-code-big" id="prof-invite-code">——</div>
         </div>
         <button class="copy-btn" onclick="copyInviteCode()">העתק</button>
       </div>
     </div>
     <div id="family-members" style="margin-bottom:1rem"></div>
-    <button onclick="doLogout()" style="width:100%;padding:.75rem;border-radius:var(--rs);background:var(--red-d);border:.5px solid var(--red-b);color:var(--red);font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer">יציאה מהחשבון</button>
+    <!-- Settings -->
+    <div style="background:var(--s1);border-radius:var(--rs);margin-bottom:1rem;overflow:hidden">
+      <div style="padding:.75rem 1rem;border-bottom:.5px solid var(--b1);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:.85rem">🌓 מצב תצוגה</div>
+        <div style="display:flex;gap:.35rem">
+          <button id="theme-dark" onclick="setTheme('dark')" style="padding:.3rem .75rem;border-radius:20px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;background:var(--bg);border:.5px solid var(--b2);color:var(--txt)">כהה</button>
+          <button id="theme-light" onclick="setTheme('light')" style="padding:.3rem .75rem;border-radius:20px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;background:var(--s1);border:.5px solid var(--b1);color:var(--txt2)">בהיר</button>
+        </div>
+      </div>
+      <div style="padding:.75rem 1rem;border-bottom:.5px solid var(--b1);display:flex;align-items:center;justify-content:space-between" onclick="goTab('goals');C('ov-profile').classList.remove('on')">
+        <div style="font-size:.85rem">🎯 יעדי חיסכון</div>
+        <div style="font-size:.75rem;color:var(--blu)">›</div>
+      </div>
+      <div style="padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between" onclick="C('ov-profile').classList.remove('on');openCatModal()">
+        <div style="font-size:.85rem">🏷️ קטגוריות מותאמות</div>
+        <div style="font-size:.75rem;color:var(--blu)">›</div>
+      </div>
+    </div>
+    <button onclick="doLogout()" style="width:100%;padding:.75rem;border-radius:var(--rs);background:var(--red-d);border:.5px solid var(--red-b);color:var(--red);font-family:inherit;font-size:.88rem;font-weight:600;cursor:pointer;margin-bottom:.5rem">יציאה מהחשבון</button>
+    <button onclick="confirmDeleteAccount()" style="width:100%;padding:.65rem;border-radius:var(--rs);background:none;border:.5px solid var(--b1);color:var(--txt3);font-family:inherit;font-size:.78rem;cursor:pointer">מחיקת חשבון</button>
   </div></div>
 
 </div><!-- /app -->
@@ -754,6 +817,12 @@ const CATS={
 };
 const MHE=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 const DBUD={מזון:1500,תחבורה:600,בידור:400,קניות:800,בריאות:300,שכירות:3000,'חשמל/מים':250,אחר:500};
+const DEFAULT_CATS={
+  מזון:{i:'🍔',c:'#ff9f0a'},תחבורה:{i:'🚗',c:'#0a84ff'},בידור:{i:'🎬',c:'#bf5af2'},
+  קניות:{i:'🛍️',c:'#ff453a'},בריאות:{i:'💊',c:'#30d158'},שכירות:{i:'🏠',c:'#64d2ff'},
+  'חשמל/מים':{i:'💡',c:'#ffd60a'},השקעות:{i:'📈',c:'#5e5ce6'},
+  משכורת:{i:'💼',c:'#30d158'},אחר:{i:'✦',c:'#86868b'}
+};
 
 // ════ APP STATE ════
 let user=null, profile=null, family=null, familySettings=null;
@@ -761,7 +830,7 @@ let txs=[], buds={...DBUD}, goals=[], ob=0, usd=3.70;
 const now=new Date();
 let cM=now.getMonth(), cY=now.getFullYear();
 let aType='expense', eType='expense', aAmt='0', aCur='ILS';
-let budEdit=false, period='month', hf='all';
+let budEdit=false, period='month', hf='all', catEdit=false;
 
 const C=id=>document.getElementById(id);
 const fmt=n=>Number(n).toLocaleString('he-IL',{maximumFractionDigits:0});
@@ -831,6 +900,97 @@ async function doForgot(){
   C('auth-err').style.color='var(--grn)';
   C('auth-err').textContent='קישור איפוס נשלח לאימייל ✓';
   C('forgot-wrap').style.display='none';
+}
+
+// ════ CUSTOM CATEGORIES ════
+let customCats=JSON.parse(localStorage.getItem('hofesh-cats')||'{}');
+
+function getAllCats(){
+  return {...DEFAULT_CATS,...customCats};
+}
+
+function openCatModal(){
+  renderCustomCatsList();
+  C('ov-cat').classList.add('on');
+}
+
+function renderCustomCatsList(){
+  const list=C('custom-cats-list');
+  const custom=Object.entries(customCats);
+  if(!custom.length){
+    list.innerHTML='<div style="font-size:.78rem;color:var(--txt2);text-align:center;padding:.5rem 0">אין קטגוריות מותאמות עדיין</div>';
+    return;
+  }
+  list.innerHTML=custom.map(([name,cat])=>`
+    <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:.5px solid var(--b1)">
+      <div style="width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;background:${cat.c}22">${cat.i}</div>
+      <div style="flex:1;font-size:.85rem;font-weight:500">${name}</div>
+      <button onclick="removeCustomCat('${name}')" style="background:var(--red-d);border:none;border-radius:8px;color:var(--red);width:26px;height:26px;cursor:pointer;font-size:.75rem;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>`).join('');
+}
+
+function addCustomCat(){
+  const name=C('new-cat-name').value.trim();
+  const icon=C('new-cat-icon').value.trim()||'📌';
+  const color=C('new-cat-color').value||'#30d158';
+  if(!name){toast('הכנס שם קטגוריה');return;}
+  if(DEFAULT_CATS[name]){toast('קטגוריה זו כבר קיימת');return;}
+  customCats[name]={i:icon,c:color};
+  localStorage.setItem('hofesh-cats',JSON.stringify(customCats));
+  C('new-cat-name').value='';C('new-cat-icon').value='';
+  renderCustomCatsList();
+  // Update category selects
+  updateCatSelects();
+  toast('קטגוריה נוספה ✓');
+}
+
+function removeCustomCat(name){
+  delete customCats[name];
+  localStorage.setItem('hofesh-cats',JSON.stringify(customCats));
+  renderCustomCatsList();
+  updateCatSelects();
+  toast('קטגוריה נמחקה');
+}
+
+function updateCatSelects(){
+  const custom=Object.entries(customCats);
+  if(!custom.length)return;
+  ['a-cat','e-cat'].forEach(id=>{
+    const sel=C(id);if(!sel)return;
+    // Remove old custom options
+    Array.from(sel.options).forEach(o=>{if(o.dataset.custom)o.remove();});
+    // Add new ones
+    custom.forEach(([name,cat])=>{
+      const opt=document.createElement('option');
+      opt.value=name;opt.textContent=cat.i+' '+name;opt.dataset.custom='1';
+      sel.appendChild(opt);
+    });
+  });
+}
+
+function setTheme(theme){
+  document.documentElement.setAttribute('data-theme',theme);
+  localStorage.setItem('hofesh-theme',theme);
+  const dark=C('theme-dark'), light=C('theme-light');
+  if(dark&&light){
+    dark.style.background=theme==='dark'?'var(--bg3)':'var(--s1)';
+    dark.style.color=theme==='dark'?'var(--txt)':'var(--txt2)';
+    light.style.background=theme==='light'?'var(--bg3)':'var(--s1)';
+    light.style.color=theme==='light'?'var(--txt)':'var(--txt2)';
+  }
+}
+
+async function confirmDeleteAccount(){
+  C('ov-profile').classList.remove('on');
+  // Show confirm sheet
+  const confirmed=window.confirm('למחוק את החשבון לצמיתות? פעולה זו אינה הפיכה.');
+  if(!confirmed)return;
+  try{
+    // Sign out and show message
+    await sb.auth.signOut();
+    toast('לפנייה למחיקת החשבון שלח מייל לתמיכה');
+    setTimeout(()=>location.reload(),2000);
+  }catch(e){toast('שגיאה: '+e.message);}
 }
 
 async function doLogout(){
@@ -914,6 +1074,7 @@ async function loadUserData(){
 
   // subscribe to realtime
   subscribeRealtime();
+  updateCatSelects(); // add custom categories to selects
   // init touch handlers now that app is visible
   initSwipe();
   C('scroll').addEventListener('touchstart',e=>{document.querySelectorAll('.txw.sw').forEach(w=>{if(!w.contains(e.target))rw(w);});},{passive:true});
@@ -1077,7 +1238,7 @@ async function delTx(id){
 
 // ════ TX ROW ════
 function mkTx(t,i){
-  const c=CATS[t.category]||CATS['אחר'];
+  const c=getAllCats()[t.category]||getAllCats()['אחר'];
   const d=new Date(t.date);
   const ds=d.toLocaleDateString('he-IL',{day:'numeric',month:'short'});
   const sign=t.type==='expense'?'-':'+';
@@ -1128,14 +1289,21 @@ async function saveOb(){
 }
 function setRealBalance(){
   const realStr=C('ob-real').value;
-  if(!realStr){C('ob-real-wrap').style.display='flex';C('ob-real').focus();return;}
+  if(!realStr){
+    C('ob-real-wrap').style.display='flex';
+    setTimeout(()=>C('ob-real').focus(),100);
+    return;
+  }
   const real=parseFloat(realStr);
-  if(isNaN(real)){toast('סכום לא תקין');return;}
+  if(isNaN(real)||real<0){toast('הכנס סכום תקין');return;}
   const inc=sumT(txs,'income'),exp=sumT(txs,'expense'),inv=sumT(txs,'invest');
-  ob=real-inc+exp-inv-getTotalSavings();
-  C('ob-inp').value=ob.toFixed(0);
-  C('ob-real-wrap').style.display='none';C('ob-real').value='';
-  toast('חושב — לחץ שמור לאישור');
+  const totalSav=getTotalSavings();
+  // ob = real - inc + exp - inv - savings
+  ob=parseFloat((real-inc+exp-inv-totalSav).toFixed(2));
+  C('ob-inp').value=Math.round(ob);
+  C('ob-real-wrap').style.display='none';
+  C('ob-real').value='';
+  toast('✓ חושב — לחץ שמור לאישור');
 }
 
 // ════ BUDGET ════
@@ -1365,7 +1533,7 @@ function getInsights(){
   if(lexp>0){const d=Math.round((exp-lexp)/lexp*100);if(d>15)ins.push({i:'📈',t:`הוצאת ${d}% יותר מהחודש הקודם`,k:'warn'});else if(d<-10)ins.push({i:'📉',t:`הוצאת ${Math.abs(d)}% פחות 💪`,k:'good'});}
   const tots={};mt.filter(t=>t.type==='expense').forEach(t=>{tots[t.category]=(tots[t.category]||0)+t.amount;});
   const top=Object.entries(tots).sort((a,b)=>b[1]-a[1])[0];
-  if(top)ins.push({i:CATS[top[0]]?.i||'💸',t:`הכי יקר: ${top[0]} (₪${fmt(top[1])})`,k:'info'});
+  if(top)ins.push({i:getAllCats()[top[0]]?.i||'💸',t:`הכי יקר: ${top[0]} (₪${fmt(top[1])})`,k:'info'});
   const over=Object.entries(buds).filter(([cat,b])=>b>0&&(tots[cat]||0)>b);
   if(over.length)ins.push({i:'⚠️',t:`חריגה: ${over.map(([c])=>c).join(', ')}`,k:'warn'});
   if(inc>0){const rate=Math.round((inc-exp)/inc*100);if(rate>=20)ins.push({i:'💚',t:`חוסך ${rate}% מהכנסות 🎉`,k:'good'});else if(rate<0)ins.push({i:'🔴',t:'הוצאות עולות על הכנסות',k:'warn'});}
@@ -1391,9 +1559,9 @@ function renderStats(){
     <div class="sc" style="cursor:pointer" onclick="exportCSV()"><div class="sc-lbl">ייצוא</div><div class="sc-val">📤 CSV</div></div>`;
   const iCats={};pt.filter(t=>t.type==='income').forEach(t=>{iCats[t.category]=(iCats[t.category]||0)+t.amount;});
   const pn=period==='week'?'השבוע':period==='year'?`בשנת ${cY}`:`ב${MHE[cM]}`;
-  C('inc-stats').innerHTML=inc>0?Object.entries(iCats).sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>{const c=CATS[cat]||CATS['אחר'],pct=Math.round(amt/inc*100);return `<div style="margin-bottom:.65rem"><div style="display:flex;justify-content:space-between;margin-bottom:.3rem;font-size:.78rem"><span>${c.i} ${cat}</span><span style="color:var(--txt2)">${pct}% · ₪${fmt(amt)}</span></div><div class="ptrack"><div class="pfill" style="width:${pct}%;background:${c.c}"></div></div></div>`;}).join(''):`<div style="font-size:.78rem;color:var(--txt2);text-align:center;padding:.5rem 0">אין הכנסות ${pn}</div>`;
+  C('inc-stats').innerHTML=inc>0?Object.entries(iCats).sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>{const c=getAllCats()[cat]||getAllCats()['אחר'],pct=Math.round(amt/inc*100);return `<div style="margin-bottom:.65rem"><div style="display:flex;justify-content:space-between;margin-bottom:.3rem;font-size:.78rem"><span>${c.i} ${cat}</span><span style="color:var(--txt2)">${pct}% · ₪${fmt(amt)}</span></div><div class="ptrack"><div class="pfill" style="width:${pct}%;background:${c.c}"></div></div></div>`;}).join(''):`<div style="font-size:.78rem;color:var(--txt2);text-align:center;padding:.5rem 0">אין הכנסות ${pn}</div>`;
   const eTots={};pt.filter(t=>t.type==='expense').forEach(t=>{eTots[t.category]=(eTots[t.category]||0)+t.amount;});
-  const pieData=Object.entries(eTots).sort((a,b)=>b[1]-a[1]).map(([n,v])=>({n,v,c:(CATS[n]||CATS['אחר']).c}));
+  const pieData=Object.entries(eTots).sort((a,b)=>b[1]-a[1]).map(([n,v])=>({n,v,c:(getAllCats()[n]||getAllCats()['אחר']).c}));
   if(pieData.length)renderPie(pieData);
   else{C('pie').innerHTML=`<circle cx="50" cy="50" r="44" fill="rgba(255,255,255,.04)"/><text x="50" y="55" text-anchor="middle" font-size="10" fill="#48484a">אין נתונים</text>`;C('pie-leg').innerHTML=`<div style="font-size:.75rem;color:var(--txt2)">אין הוצאות</div>`;}
   if(period==='week'){
@@ -1427,7 +1595,7 @@ function renderHistory(){
   C('hist-empty').style.display='none';
   if(q){C('hist-body').innerHTML=`<div class="tx-list">${[...filtered].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(mkTx).join('')}</div>`;return;}
   const groups={};filtered.forEach(t=>{(groups[t.category]=groups[t.category]||[]).push(t);});
-  C('hist-body').innerHTML=Object.entries(groups).map(([cat,items])=>{const c=CATS[cat]||CATS['אחר'];const total=items.reduce((s,t)=>s+(t.type==='expense'?-t.amount:t.amount),0);return `<div class="cat-group"><div class="cat-group-head"><span style="font-size:.95rem">${c.i}</span><span style="font-size:.8rem;font-weight:600;flex:1">${cat}</span><span style="font-size:.78rem;font-weight:700;color:${total>=0?'var(--grn)':'var(--red)'}">₪${fmt(Math.abs(total))}</span></div><div class="tx-list">${items.map((t,i)=>mkTx(t,i)).join('')}</div></div>`;}).join('');
+  C('hist-body').innerHTML=Object.entries(groups).map(([cat,items])=>{const c=getAllCats()[cat]||getAllCats()['אחר'];const total=items.reduce((s,t)=>s+(t.type==='expense'?-t.amount:t.amount),0);return `<div class="cat-group"><div class="cat-group-head"><span style="font-size:.95rem">${c.i}</span><span style="font-size:.8rem;font-weight:600;flex:1">${cat}</span><span style="font-size:.78rem;font-weight:700;color:${total>=0?'var(--grn)':'var(--red)'}">₪${fmt(Math.abs(total))}</span></div><div class="tx-list">${items.map((t,i)=>mkTx(t,i)).join('')}</div></div>`;}).join('');
 }
 
 function renderGoals(){
@@ -1496,6 +1664,12 @@ async function initApp(){
     C('auth-err').textContent='שגיאת חיבור: '+e.message;
   }
 }
+
+// Apply saved theme
+(function(){
+  const t=localStorage.getItem('hofesh-theme')||'dark';
+  document.documentElement.setAttribute('data-theme',t);
+})();
 
 // Load supabase dynamically then init
 document.addEventListener('DOMContentLoaded', function(){

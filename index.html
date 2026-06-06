@@ -34,15 +34,26 @@
 }
 [data-theme="light"]{
   --bg:#f2f2f7;--bg2:#ffffff;--bg3:#e5e5ea;
-  --s1:rgba(0,0,0,0.04);--s2:rgba(0,0,0,0.07);
+  --s1:rgba(0,0,0,0.05);--s2:rgba(0,0,0,0.09);
   --b1:rgba(0,0,0,0.1);--b2:rgba(0,0,0,0.18);
   --txt:#1c1c1e;--txt2:#6d6d72;--txt3:#aeaeb2;
 }
-[data-theme="light"] #topnav{background:rgba(242,242,247,0.9)}
-[data-theme="light"] #tabbar{background:rgba(242,242,247,0.95)}
-[data-theme="light"] #toast{background:#ffffff}
+[data-theme="light"] body{background:#f2f2f7}
+[data-theme="light"] #topnav{background:rgba(242,242,247,0.92);border-bottom:.5px solid rgba(0,0,0,0.12)}
+[data-theme="light"] #tabbar{background:rgba(255,255,255,0.95);border-top:.5px solid rgba(0,0,0,0.1)}
+[data-theme="light"] #toast{background:#ffffff;color:#1c1c1e}
 [data-theme="light"] .sheet{background:#ffffff}
+[data-theme="light"] .auth-card{background:#ffffff;border-color:rgba(0,0,0,0.1)}
+[data-theme="light"] .auth-field{background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.1)}
+[data-theme="light"] .auth-field input{color:#1c1c1e}
 [data-theme="light"] #loading{background:#f2f2f7}
+[data-theme="light"] .freedom{background:linear-gradient(135deg,rgba(48,209,88,0.12),rgba(10,132,255,0.08));border-color:var(--grn-b)}
+[data-theme="light"] .nkey{background:rgba(0,0,0,0.06);border-color:rgba(0,0,0,0.12);color:#1c1c1e}
+[data-theme="light"] .ttog{background:rgba(0,0,0,0.06)}
+[data-theme="light"] .ptog{background:rgba(0,0,0,0.06)}
+[data-theme="light"] .ptog-btn.on{background:#ffffff}
+[data-theme="light"] .field{background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.12)}
+[data-theme="light"] .field input,[data-theme="light"] .field select{color:#1c1c1e}
 :root{
   --bg:#000;--bg2:#141414;--bg3:#1c1c1e;
   --s1:rgba(255,255,255,0.05);--s2:rgba(255,255,255,0.09);
@@ -236,12 +247,14 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
   color:var(--txt);font-family:inherit;font-size:.8rem;padding:.22rem .45rem;width:72px;text-align:center;outline:none}
 
 /* ── TX ── */
-.tx-list{display:flex;flex-direction:column;gap:.35rem}
-.txw{position:relative;border-radius:var(--rs);overflow:hidden}
+.tx-list{display:flex;flex-direction:column}
+.txw{position:relative;border-radius:var(--rs);overflow:hidden;margin-bottom:.35rem}
 .txw-bg{position:absolute;inset:0;background:var(--red);display:flex;align-items:center;
   justify-content:flex-start;padding-right:1rem;font-size:1.1rem;border-radius:var(--rs);
   opacity:0;transition:opacity .15s}
 .txw.sw .txw-bg{opacity:1}
+.txw.sw .tx-action-bar{display:flex!important}
+.txw.sw .tx{border-radius:var(--rs) var(--rs) 0 0;border-bottom:none}
 .tx{display:flex;align-items:center;gap:.65rem;background:var(--bg2);border:.5px solid var(--b1);
   border-radius:var(--rs);padding:.75rem .85rem;position:relative;z-index:1;
   transform:translateX(0);transition:transform .22s cubic-bezier(.25,.46,.45,.94);
@@ -726,6 +739,24 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
     <button onclick="saveGoal()" style="width:100%;margin-top:.4rem;padding:.85rem;border-radius:var(--rs);background:var(--blu);color:#fff;font-family:inherit;font-size:.92rem;font-weight:700;border:none;cursor:pointer">הוסף יעד</button>
   </div></div>
 
+  <!-- DELETE ACCOUNT MODAL -->
+  <div class="ov" id="ov-del-account" onclick="if(event.target===this)C('ov-del-account').classList.remove('on')">
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-title" style="color:var(--red)">מחיקת חשבון</div>
+    <div style="background:var(--red-d);border:.5px solid var(--red-b);border-radius:12px;padding:.9rem;margin-bottom:1rem;text-align:center">
+      <div style="font-size:.8rem;color:var(--red);line-height:1.6">פעולה זו תמחק את חשבונך לצמיתות.<br>כל הנתונים יישמרו למשפחה.</div>
+    </div>
+    <div style="font-size:.82rem;color:var(--txt2);margin-bottom:.5rem;text-align:center">
+      להמשך הקלד את הקוד: <strong style="color:var(--txt);font-size:1.1rem;letter-spacing:.15em" id="del-confirm-code">----</strong>
+    </div>
+    <div class="field"><span class="fi">🔑</span>
+      <input type="number" id="del-code-inp" placeholder="הקלד קוד אישור" maxlength="4" dir="ltr"
+        style="flex:1;background:none;border:none;outline:none;color:var(--txt);font-size:1.1rem;font-family:inherit;text-align:center;letter-spacing:.15em"></div>
+    <button onclick="executeDeleteAccount()" style="width:100%;margin-top:.4rem;padding:.85rem;border-radius:var(--rs);background:var(--red);color:#fff;font-family:inherit;font-size:.92rem;font-weight:700;border:none;cursor:pointer">מחק חשבון לצמיתות</button>
+    <button onclick="C('ov-del-account').classList.remove('on')" style="width:100%;margin-top:.4rem;padding:.7rem;border-radius:var(--rs);background:var(--s1);border:.5px solid var(--b2);color:var(--txt2);font-family:inherit;font-size:.82rem;cursor:pointer">ביטול</button>
+  </div></div>
+
   <!-- CUSTOM CATEGORY MODAL -->
   <div class="ov" id="ov-cat" onclick="if(event.target===this)C('ov-cat').classList.remove('on')">
   <div class="sheet">
@@ -954,15 +985,15 @@ function removeCustomCat(name){
 
 function updateCatSelects(){
   const custom=Object.entries(customCats);
-  if(!custom.length)return;
   ['a-cat','e-cat'].forEach(id=>{
     const sel=C(id);if(!sel)return;
     // Remove old custom options
-    Array.from(sel.options).forEach(o=>{if(o.dataset.custom)o.remove();});
+    Array.from(sel.options).forEach(o=>{if(o.dataset&&o.dataset.custom)o.remove();});
     // Add new ones
     custom.forEach(([name,cat])=>{
       const opt=document.createElement('option');
-      opt.value=name;opt.textContent=cat.i+' '+name;opt.dataset.custom='1';
+      opt.value=name;opt.textContent=cat.i+' '+name;
+      opt.setAttribute('data-custom','1');
       sel.appendChild(opt);
     });
   });
@@ -980,17 +1011,29 @@ function setTheme(theme){
   }
 }
 
-async function confirmDeleteAccount(){
-  C('ov-profile').classList.remove('on');
-  // Show confirm sheet
-  const confirmed=window.confirm('למחוק את החשבון לצמיתות? פעולה זו אינה הפיכה.');
-  if(!confirmed)return;
+async function executeDeleteAccount(){
+  const inp=C('del-code-inp').value.trim();
+  if(inp!==window._delCode){toast('קוד שגוי');return;}
   try{
-    // Sign out and show message
     await sb.auth.signOut();
-    toast('לפנייה למחיקת החשבון שלח מייל לתמיכה');
-    setTimeout(()=>location.reload(),2000);
+    toast('החשבון נמחק — להתראות 👋');
+    setTimeout(()=>location.reload(),1500);
   }catch(e){toast('שגיאה: '+e.message);}
+}
+
+function confirmDeleteAccount(){
+  // Check if user is family creator
+  if(family&&family.created_by&&family.created_by!==user.id){
+    toast('רק יוצר המשפחה יכול למחוק את החשבון');
+    return;
+  }
+  C('ov-profile').classList.remove('on');
+  C('ov-del-account').classList.add('on');
+  // Generate 4-digit code
+  const code=Math.floor(1000+Math.random()*9000).toString();
+  window._delCode=code;
+  C('del-confirm-code').textContent=code;
+  C('del-code-inp').value='';
 }
 
 async function doLogout(){
@@ -1119,6 +1162,7 @@ function showLoading(show){
 
 // ════ ADD TX ════
 function openAdd(){
+  document.body.style.overflow='hidden';
   aAmt='0';C('a-amt').value='';C('a-desc').value='';
   const td=new Date();C('a-date').value=td.toISOString().split('T')[0];
   setAT('expense');
@@ -1126,7 +1170,12 @@ function openAdd(){
   C('fab').classList.add('open');
   setTimeout(()=>C('a-amt').focus(),320);
 }
-function closeAdd(){C('ov-add').classList.remove('on');C('fab').classList.remove('open');}
+function closeAdd(){
+  C('ov-add').classList.remove('on');
+  C('fab').classList.remove('open');
+  document.body.style.overflow='';
+  document.body.style.position='fixed';
+}
 
 function setAT(t){
   aType=t;
@@ -1245,19 +1294,20 @@ function mkTx(t,i){
   const col=t.type==='expense'?'var(--red)':t.type==='invest'?'var(--pur)':'var(--grn)';
   const whoTag=t.user_name?`<span class="tx-who">${t.user_name}</span>`:'';
   return `<div class="txw" id="txw-${t.id}" style="animation:slideIn .22s ${Math.min(i,.5)*0.04}s both">
-    <div class="txw-bg">🗑️</div>
-    <div class="tx" ontouchstart="ts(event,${t.id})" ontouchend="te(event,${t.id})">
+    <div class="tx" onclick="toggleTxActions(${t.id})">
       <div class="tx-ico" style="background:${c.c}22">${c.i}</div>
       <div class="tx-body">
         <div class="tx-name">${t.description||t.category}</div>
         <div class="tx-meta">${ds} · ${t.category}${whoTag?'&nbsp;'+whoTag:''}</div>
       </div>
       <div class="tx-amt" style="color:${col}">${sign}₪${fmt(t.amount)}</div>
-      <button class="tx-del" onclick="delTx(${t.id})">מחק</button>
-      <div class="tx-acts">
-        <button class="tx-act tx-act-e" onclick="openEdit(${t.id})">✎</button>
-        <button class="tx-act tx-act-d" onclick="delTx(${t.id})">🗑</button>
-      </div>
+      <span style="font-size:.65rem;color:var(--txt3);flex-shrink:0">···</span>
+    </div>
+    <div class="tx-action-bar" style="display:none;padding:.4rem .85rem;gap:.5rem;background:var(--bg3);border:.5px solid var(--b1);border-top:none;border-radius:0 0 var(--rs) var(--rs)">
+      <button onclick="openEdit(${t.id});C('txw-${t.id}').classList.remove('sw')"
+        style="flex:1;padding:.45rem;border-radius:8px;background:var(--blu-d);border:.5px solid var(--blu-b);color:var(--blu);font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer">✎ עריכה</button>
+      <button onclick="delTx(${t.id})"
+        style="flex:1;padding:.45rem;border-radius:8px;background:var(--red-d);border:.5px solid var(--red-b);color:var(--red);font-family:inherit;font-size:.75rem;font-weight:600;cursor:pointer">🗑 מחיקה</button>
     </div>
   </div>`;
 }
@@ -1633,7 +1683,7 @@ function render(){
 
 // ════ SWIPE TABS ════
 const tabs=['home','stats','history','goals'];
-let tabSwipeX=0,tabSwipeY=0;
+let tabSwipeX=0,tabSwipeY=0,tabSwipeActive=true;
 function initSwipe(){
   C('scroll').addEventListener('touchstart',e=>{tabSwipeX=e.touches[0].clientX;tabSwipeY=e.touches[0].clientY;},{passive:true});
   C('scroll').addEventListener('touchend',e=>{
@@ -1648,20 +1698,20 @@ function initSwipe(){
 
 // ════ INIT ════
 async function initApp(){
+  // Show auth screen immediately, then check session
+  showLoading(false);
+  C('auth-wrap').classList.remove('hide');
   try {
     const {data:{session}}=await sb.auth.getSession();
     user=session?.user||null;
     if(user){
+      C('auth-wrap').classList.add('hide');
+      showLoading(true);
       await loadUserData();
-    } else {
-      showLoading(false);
-      C('auth-wrap').classList.remove('hide');
     }
   } catch(e) {
     console.error('initApp error:', e);
-    showLoading(false);
-    C('auth-wrap').classList.remove('hide');
-    C('auth-err').textContent='שגיאת חיבור: '+e.message;
+    C('auth-err').textContent='שגיאת חיבור — בדוק אינטרנט';
   }
 }
 

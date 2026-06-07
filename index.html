@@ -710,6 +710,10 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
 
     <!-- INVEST -->
     <div class="view" id="v-invest"><div class="page">
+      <div class="glass" style="padding:.6rem .9rem;margin-bottom:.65rem;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:.75rem;color:var(--txt2)">שער דולר עדכני</div>
+        <div style="font-size:.82rem;font-weight:600;color:var(--grn)" id="inv-usd-rate" class="usd-rate-display">טוען...</div>
+      </div>
       <div class="card glass" id="inv-summary-card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
           <div class="card-head" style="margin-bottom:0">📈 תיק השקעות</div>
@@ -771,7 +775,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
     <div class="cur-row" id="cur-row">
       <button class="cur-btn" id="cur-ils" onclick="setCur('ILS')" style="background:var(--grn);color:#000">₪ שקל</button>
       <button class="cur-btn" id="cur-usd" onclick="setCur('USD')" style="background:var(--surface);color:var(--txt2)">$ דולר</button>
-      <div style="font-size:.65rem;color:var(--txt3);padding:0 .3rem;white-space:nowrap" id="cur-rate">$1 = ₪3.70</div>
+      <div style="font-size:.65rem;color:var(--txt3);padding:0 .3rem;white-space:nowrap" id="cur-rate" class="usd-rate-display">$1 = ₪3.70</div>
     </div>
     <div class="amt-wrap" onclick="C('a-amt').focus()">
       <div class="amt-cur" id="a-cur-sign">₪</div>
@@ -1034,7 +1038,7 @@ const DEFAULT_CATS={
 
 // ════ APP STATE ════
 let user=null, profile=null, family=null, familySettings=null;
-let txs=[], buds={...DBUD}, goals=[], ob=0, usd=3.70;
+let txs=[], buds={...DBUD}, goals=[], ob=0, usd=parseFloat(localStorage.getItem('hofesh-usd')||'3.70');
 const now=new Date();
 let cM=now.getMonth(), cY=now.getFullYear();
 let aType='expense', eType='expense', aAmt='0', aCur='ILS';
@@ -1417,25 +1421,65 @@ async function loadUserData(){
 
   // fetch USD rate
   fetch('https://api.exchangerate-api.com/v4/latest/USD')
-    .then(r=>r.json()).then(d=>{usd=d.rates?.ILS||3.70;if(C('cur-rate'))C('cur-rate').textContent='$1 = ₪'+usd.toFixed(2);}).catch(()=>{});
+    .then(r=>r.json()).then(d=>{
+      usd=d.rates?.ILS||3.70;
+      localStorage.setItem('hofesh-usd',usd);
+      // Update all rate displays
+      document.querySelectorAll('.usd-rate-display').forEach(el=>{
+        el.textContent='$1 = ₪'+usd.toFixed(2);
+      });
+      if(C('cur-rate'))C('cur-rate').textContent='$1 = ₪'+usd.toFixed(2);
+    }).catch(()=>{});
 }
 
 // ════ REALTIME SYNC ════
 function subscribeRealtime(){
   sb.channel('family-'+profile.family_id)
-    .on('postgres_changes',{event:'*',schema:'public',table:'transactions',filter:`family_id=eq.${profile.family_id}`},
-      async()=>{
-        const {data}=await sb.from('transactions').select('*').eq('family_id',profile.family_id).order('date',{ascending:false});
-        txs=(data||[]).map(t=>({...t,amount:parseFloat(t.amount)}));
+    .on('postgres_changes',
+      {event:'INSERT',schema:'public',table:'transactions',filter:`family_id=eq.${profile.family_id}`},
+      payload=>{
+        const t=payload.new;
+        // Don't add if already exists (we added it locally)
+        if(!txs.find(x=>x.id===t.id)){
+          txs.unshift({...t,amount:parseFloat(t.amount)});
+          txs.sort((a,b)=>new Date(b.date)-new Date(a.date));
+          render();
+          // Show toast for other family members' transactions
+          if(t.user_id!==user.id){
+            const sign=t.type==='expense'?'-':'+';
+            toast(`${t.user_name||'בן משפחה'} הוסיף: ${sign}₪${fmt(t.amount)} · ${t.category}`);
+          }
+        }
+      })
+    .on('postgres_changes',
+      {event:'UPDATE',schema:'public',table:'transactions',filter:`family_id=eq.${profile.family_id}`},
+      payload=>{
+        const t=payload.new;
+        const i=txs.findIndex(x=>x.id===t.id);
+        if(i>-1){txs[i]={...t,amount:parseFloat(t.amount)};render();}
+      })
+    .on('postgres_changes',
+      {event:'DELETE',schema:'public',table:'transactions',filter:`family_id=eq.${profile.family_id}`},
+      payload=>{
+        txs=txs.filter(t=>t.id!==payload.old.id);
         render();
       })
-    .on('postgres_changes',{event:'*',schema:'public',table:'goals',filter:`family_id=eq.${profile.family_id}`},
+    .on('postgres_changes',
+      {event:'*',schema:'public',table:'goals',filter:`family_id=eq.${profile.family_id}`},
       async()=>{
         const {data}=await sb.from('goals').select('*').eq('family_id',profile.family_id);
         goals=(data||[]).map(g=>({...g,saved:parseFloat(g.saved||0),target:parseFloat(g.target)}));
         render();
       })
-    .subscribe();
+    .on('postgres_changes',
+      {event:'*',schema:'public',table:'family_settings',filter:`family_id=eq.${profile.family_id}`},
+      async()=>{
+        const {data}=await sb.from('family_settings').select('*').eq('family_id',profile.family_id).single();
+        if(data){ob=parseFloat(data.opening_balance||0);render();}
+      })
+    .subscribe(status=>{
+      console.log('Realtime status:',status);
+    });
 }
 
 // ════ TABS ════
@@ -1475,7 +1519,7 @@ function setAT(t){
 function setCur(cur){
   aCur=cur;
   C('cur-ils').style.cssText=cur==='ILS'?'background:var(--grn);color:#000':'background:var(--s1);color:var(--txt2)';
-  C('cur-usd').style.cssText=cur==='USD'?'background:var(--blu);color:#fff':'background:var(--s1);color:var(--txt2)';
+  C('cur-usd').style.cssText=cur==='USD'?'background:var(--blu);color:#fff':'background:var(--surface);color:var(--txt2)';
   C('a-cur-sign').textContent=cur==='USD'?'$':'₪';
 }
 
@@ -1965,6 +2009,10 @@ function render(){
   renderInvPortfolio();renderBudget();renderHomeTxs();
   renderBudget();renderStats();renderHistory();renderGoals();
   if(C('v-invest').classList.contains('on'))renderInvestTab();
+  // Update USD rate displays
+  document.querySelectorAll('.usd-rate-display').forEach(el=>{
+    el.textContent='$1 = ₪'+usd.toFixed(2);
+  });
   // Daily tip
   const tipEl=C('daily-tip');if(tipEl)tipEl.textContent=getDailyTip();
   // Freedom in stats

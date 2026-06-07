@@ -475,9 +475,10 @@ window.supabase = {
         upsert: function(data, opts) {
           var ub = {
             then: async function(resolve) {
-              var conflict = opts&&opts.onConflict ? '&on_conflict='+opts.onConflict : '';
+              // PostgREST upsert: use on_conflict param in URL
+              var conflict = opts&&opts.onConflict ? '?on_conflict='+opts.onConflict : '';
               var h = {'Prefer':'resolution=merge-duplicates,return=representation'};
-              resolve(await rest('POST', '/rest/v1/'+table+'?upsert=true'+conflict, Array.isArray(data)?data:[data], h));
+              resolve(await rest('POST', '/rest/v1/'+table+conflict, Array.isArray(data)?data:[data], h));
             }
           };
           return ub;

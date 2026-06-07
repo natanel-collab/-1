@@ -1559,15 +1559,29 @@ C('scroll').addEventListener('touchend',e=>{
 },{passive:true});
 
 // ════ INIT ════
+// Show auth screen immediately, check session in background
+showLoading(false);
+C('auth-wrap').classList.remove('hide');
+
 (async()=>{
-  const {data:{session}}=await sb.auth.getSession();
-  user=session?.user||null;
-  if(user)await loadUserData();
-  else{showLoading(false);C('auth-wrap').classList.remove('hide');}
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    user=session?.user||null;
+    if(user){
+      C('auth-wrap').classList.add('hide');
+      showLoading(true);
+      await loadUserData();
+    }
+  }catch(e){console.error('Session check failed',e);}
 })();
+
 sb.auth.onAuthStateChange(async(event,session)=>{
-  if(event==='SIGNED_IN'&&!user){user=session?.user||null;if(user)await loadUserData();}
-  else if(event==='SIGNED_OUT'){user=null;showLoading(false);C('auth-wrap').classList.remove('hide');}
+  if(event==='SIGNED_IN'){
+    user=session?.user||null;
+    if(user){C('auth-wrap').classList.add('hide');showLoading(true);await loadUserData();}
+  } else if(event==='SIGNED_OUT'){
+    user=null;showLoading(false);C('auth-wrap').classList.remove('hide');
+  }
 });
 
 document.head.insertAdjacentHTML('beforeend','<style>@keyframes slideIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}</style>');

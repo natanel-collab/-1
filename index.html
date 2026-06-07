@@ -2238,7 +2238,7 @@ function renderBudget(){
     const pct=bud>0?Math.min(100,Math.round(spent/bud*100)):0;
     const cls=pct>=90?' danger':pct>=70?' warn':'';
     if(budEdit)return `<div class="bud-row"><div class="bud-top"><div class="bud-name">${c.i} ${cat}</div><div style="display:flex;align-items:center;gap:.3rem"><span style="font-size:.72rem;color:var(--txt2)">₪</span><input class="bud-inp" type="number" value="${buds[cat]||0}" onchange="setBud('${cat}',this.value)" min="0"></div></div></div>`;
-    if(!bud)return `<div class="bud-row"><div class="bud-top"><div class="bud-name" style="color:var(--txt)">${c.i} ${cat}</div><div style="font-size:.65rem;color:var(--txt3)">לא הוגדר — לחץ עריכה</div></div></div>`;
+    if(!bud)return `<div class="bud-row"><div class="bud-top"><div class="bud-name">${c.i} ${cat}</div><div class="bud-amt" style="color:var(--txt3)">₪${fmt(spent)} / לא הוגדר</div></div><div class="ptrack"><div class="pfill" style="width:0%;background:${c.c}"></div></div></div>`;
     return `<div class="bud-row"><div class="bud-top"><div class="bud-name">${c.i} ${cat}</div><div class="bud-amt" style="color:${pct>=90?'var(--red)':pct>=70?'var(--ylw)':'var(--txt2)'}">₪${fmt(spent)} / ₪${fmt(bud)}</div></div><div class="ptrack"><div class="pfill${cls}" style="width:${pct}%;background:${c.c}"></div></div></div>`;
   }).join('');
 }

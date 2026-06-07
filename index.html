@@ -1095,11 +1095,12 @@ let cashBalance=parseFloat(localStorage.getItem('hofesh-cash')||'0');
 const C=id=>document.getElementById(id);
 const fmt=n=>Number(n).toLocaleString('he-IL',{maximumFractionDigits:0});
 const mTxs=(m=cM,y=cY)=>txs.filter(t=>{
-  // Use local date string to avoid timezone issues
   const dStr=t.date?.substring(0,10)||'';
   const parts=dStr.split('-');
   if(parts.length<3)return false;
-  return parseInt(parts[1])-1===m&&parseInt(parts[0])===y;
+  const tMonth=parseInt(parts[1])-1;
+  const tYear=parseInt(parts[0]);
+  return tMonth===m&&tYear===y;
 });
 const wTxs=()=>{
   const s=new Date();s.setDate(s.getDate()-s.getDay());s.setHours(0,0,0,0);
@@ -1107,9 +1108,9 @@ const wTxs=()=>{
 };
 const yTxs=(y=cY)=>txs.filter(t=>parseInt(t.date?.substring(0,4))===y);
 const pTxs=()=>period==='week'?wTxs():period==='year'?yTxs():mTxs();
-const sumT=(arr,type,includeFuture=false)=>{
+const sumT=(arr,type)=>{
   const today=new Date().toISOString().split('T')[0];
-  return arr.filter(t=>t.type===type&&(includeFuture||!t.is_future||(t.date?.substring(0,10)<=today)))
+  return arr.filter(t=>t.type===type&&(!t.is_future||(t.date?.substring(0,10)<=today)))
     .reduce((s,t)=>s+t.amount,0);
 };
 const getTotalSavings=()=>goals.reduce((s,g)=>s+(g.saved||0),0);
@@ -1978,9 +1979,10 @@ function renderBalance(){
   const freeM=total>0?Math.floor(total/avgExp):0;
 
   // Update freedom in stats tab
-  if(C('fr-num-stats'))C('fr-num-stats').textContent=freeM>99?'99+':freeM;
-  if(C('fr-sub-stats'))C('fr-sub-stats').textContent='חודשים של חופש כלכלי'+(freeM>=12?' 🎉':'');
-  if(C('fr-bar-stats'))C('fr-bar-stats').style.width=Math.min(100,freeM/24*100)+'%';
+  const fns=C('fr-num-stats'),fss=C('fr-sub-stats'),fbs=C('fr-bar-stats');
+  if(fns)fns.textContent=freeM>99?'99+':freeM;
+  if(fss)fss.textContent='חודשים של חופש כלכלי'+(freeM>=12?' 🎉':'');
+  if(fbs)fbs.style.width=Math.min(100,freeM/24*100)+'%';
 
   // update home date
   const dateEl=C('home-date');
@@ -2037,7 +2039,9 @@ function renderBudget(){
   const cats=[...Object.keys(DEFAULT_CATS).filter(c=>c!=='משכורת'&&c!=='השקעות'),
               ...Object.keys(customCats)];
   C('bud-list').innerHTML=cats.map(cat=>{
-    const c=getAllCats()[cat]||{i:'📌',c:'#86868b'},spent=tots[cat]||0,bud=buds[cat]||0;
+    const c=getAllCats()[cat]||{i:'📌',c:'#86868b'},spent=tots[cat]||0;
+    // Use Supabase budget if set, otherwise use default
+    const bud=buds[cat]||DBUD[cat]||0;
     const pct=bud>0?Math.min(100,Math.round(spent/bud*100)):0;
     const cls=pct>=90?' danger':pct>=70?' warn':'';
     if(budEdit)return `<div class="bud-row"><div class="bud-top"><div class="bud-name">${c.i} ${cat}</div><div style="display:flex;align-items:center;gap:.3rem"><span style="font-size:.72rem;color:var(--txt2)">₪</span><input class="bud-inp" type="number" value="${buds[cat]||0}" onchange="setBud('${cat}',this.value)" min="0"></div></div></div>`;
@@ -2190,11 +2194,8 @@ function render(){
   document.querySelectorAll('.usd-rate-display').forEach(el=>{
     el.textContent='$1 = ₪'+usd.toFixed(2);
   });
-  // Freedom in stats
-  const fns=C('fr-num-stats'),fss=C('fr-sub-stats'),fbs=C('fr-bar-stats');
-  if(fns)fns.textContent=C('fr-num').textContent;
-  if(fss)fss.textContent=C('fr-sub').textContent;
-  if(fbs)fbs.style.width=C('fr-bar').style.width;
+  // Freedom in stats - computed directly, not copied
+  // (renderBalance already updates fr-num-stats, fr-sub-stats, fr-bar-stats)
 }
 
 // ════ SWIPE TABS ════

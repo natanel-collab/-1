@@ -584,6 +584,17 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
         <div class="marr" onclick="chgMonth(1)">›</div>
       </div>
 
+      <!-- Freedom mini on home -->
+      <div class="glass" style="padding:.75rem 1rem;margin-bottom:.65rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="goTab('stats')">
+        <div>
+          <div style="font-size:.62rem;color:var(--grn);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.2rem">⚡ מד החופש</div>
+          <div style="font-size:.72rem;color:var(--txt2)">חודשים ללא הכנסה</div>
+        </div>
+        <div style="text-align:left">
+          <div style="font-size:1.8rem;font-weight:800;letter-spacing:-.04em;color:var(--grn);line-height:1" id="home-freedom-num">–</div>
+        </div>
+      </div>
+
       <!-- Daily tip -->
       <div class="tip-card glass">
         <div class="tip-tag">💡 טיפ פיננסי יומי</div>
@@ -777,10 +788,11 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
       <button class="cur-btn" id="cur-usd" onclick="setCur('USD')" style="background:var(--surface);color:var(--txt2)">$ דולר</button>
       <div style="font-size:.65rem;color:var(--txt3);padding:0 .3rem;white-space:nowrap" id="cur-rate" class="usd-rate-display">$1 = ₪3.70</div>
     </div>
+    <div id="usd-convert-display" style="display:none;text-align:center;font-size:.78rem;color:var(--grn);margin-bottom:.5rem;font-weight:600"></div>
     <div class="amt-wrap" onclick="C('a-amt').focus()">
       <div class="amt-cur" id="a-cur-sign">₪</div>
       <input class="amt-inp" id="a-amt" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"
-        oninput="aAmt=this.value||'0'" onkeydown="if(event.key==='Enter')C('a-desc').focus()">
+        oninput="aAmt=this.value||'0';const uc=C('usd-convert-display');if(uc&&aCur==='USD'&&aType==='invest'){const r=parseFloat(aAmt)||0;uc.style.display=r>0?'block':'none';if(r>0)uc.textContent='$'+r+' = ₪'+fmt((r*usd).toFixed(0))+' (שער '+usd.toFixed(2)+')';}" onkeydown="if(event.key==='Enter')C('a-desc').focus()">
     </div>
     <div class="field"><span class="fi">📝</span><input type="text" id="a-desc" placeholder="תיאור" maxlength="40"></div>
     <div class="field"><span class="fi">📅</span>
@@ -1532,6 +1544,17 @@ function nk(k){
     else{if(aAmt.replace('.','').length>=8)return;const di=aAmt.indexOf('.');if(di!==-1&&aAmt.length-di>2)return;aAmt+=k;}
   }
   inp.value=aAmt==='0'?'':aAmt;
+  // Show live USD→ILS conversion
+  const ucdEl=C('usd-convert-display');
+  if(ucdEl&&aCur==='USD'&&aType==='invest'){
+    const raw=parseFloat(aAmt)||0;
+    if(raw>0){
+      ucdEl.style.display='block';
+      ucdEl.textContent=`$${raw} = ₪${fmt((raw*usd).toFixed(0))} (שער ${usd.toFixed(2)})`;
+    } else {
+      ucdEl.style.display='none';
+    }
+  } else if(ucdEl) ucdEl.style.display='none';
 }
 
 async function addTx(){
@@ -1811,9 +1834,14 @@ function renderBalance(){
   const ms=new Set(txs.filter(t=>t.type==='expense').map(t=>{const d=new Date(t.date);return d.getMonth()+'-'+d.getFullYear();})).size||1;
   const avgExp=exp>0?exp/ms:sumT(mt,'expense')||500;
   const freeM=total>0?Math.floor(total/avgExp):0;
-  C('fr-num').textContent=freeM>99?'99+':freeM;
-  C('fr-sub').textContent='חודשים של חופש כלכלי'+(freeM>=12?' 🎉':'');
-  C('fr-bar') && (C('fr-bar').style.width=Math.min(100,freeM/24*100)+'%');
+
+  // Update freedom in stats tab
+  if(C('fr-num-stats'))C('fr-num-stats').textContent=freeM>99?'99+':freeM;
+  if(C('fr-sub-stats'))C('fr-sub-stats').textContent='חודשים של חופש כלכלי'+(freeM>=12?' 🎉':'');
+  if(C('fr-bar-stats'))C('fr-bar-stats').style.width=Math.min(100,freeM/24*100)+'%';
+  // Also show freedom number on home as a small badge
+  const freeHome=C('home-freedom-num');
+  if(freeHome)freeHome.textContent=freeM>99?'99+':freeM;
   // update home date
   const dateEl=C('home-date');
   if(dateEl){
@@ -1860,7 +1888,7 @@ function renderBudget(){
   const cats=[...Object.keys(DEFAULT_CATS).filter(c=>c!=='משכורת'&&c!=='השקעות'),
               ...Object.keys(customCats)];
   C('bud-list').innerHTML=cats.map(cat=>{
-    const c=CATS[cat],spent=tots[cat]||0,bud=buds[cat]||0;
+    const c=getAllCats()[cat]||{i:'📌',c:'#86868b'},spent=tots[cat]||0,bud=buds[cat]||0;
     const pct=bud>0?Math.min(100,Math.round(spent/bud*100)):0;
     const cls=pct>=90?' danger':pct>=70?' warn':'';
     if(budEdit)return `<div class="bud-row"><div class="bud-top"><div class="bud-name">${c.i} ${cat}</div><div style="display:flex;align-items:center;gap:.3rem"><span style="font-size:.72rem;color:var(--txt2)">₪</span><input class="bud-inp" type="number" value="${buds[cat]||0}" onchange="setBud('${cat}',this.value)" min="0"></div></div></div>`;

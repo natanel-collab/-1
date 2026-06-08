@@ -1987,22 +1987,13 @@ function toggleTxActions(id){
 function rw(w){if(w)w.classList.remove('sw');}
 // tx swipe init - called from initApp
 async function delTx(id){
-  const dbg=(msg)=>{
-    let d=document.getElementById('debug-box');
-    if(!d){d=document.createElement('div');d.id='debug-box';d.style.cssText='position:fixed;top:50px;left:10px;right:10px;background:#000;color:#0f0;font-size:11px;font-family:monospace;padding:10px;z-index:9999;border:1px solid #0f0;border-radius:8px;white-space:pre-wrap;direction:ltr;max-height:400px;overflow:auto';document.body.appendChild(d);}
-    d.textContent+=msg+'\n';
-  };
-  document.getElementById('debug-box')?.remove();
-  dbg('1. delTx called, id='+id);
-  // SKIP local filter & render - go straight to DB
-  dbg('2. Calling DB delete now...');
-  try{
-    const result=await sb.from('transactions').delete().eq('id',id);
-    dbg('3. DB returned: '+JSON.stringify(result));
-  }catch(e){
-    dbg('3. EXCEPTION: '+e.message+' | stack: '+(e.stack||'').substring(0,200));
-  }
-  dbg('4. Done');
+  // Delete from DB first
+  const {error}=await sb.from('transactions').delete().eq('id',id);
+  if(error){toast('שגיאה: '+error.message);return;}
+  // Remove from local array
+  txs=txs.filter(t=>String(t.id)!==String(id));
+  render();
+  toast('עסקה נמחקה ✓');
 }
 
 // ════ TX ROW ════

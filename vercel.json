@@ -1,29 +1,17 @@
 {
-  "version": 2,
-  "builds": [
+  "headers": [
     {
-      "src": "index.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "api/*.js",
-      "use": "@vercel/node"
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src *; img-src * data: blob:; frame-src *; style-src * 'unsafe-inline';"
+        }
+      ]
     }
   ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
-  ],
-  "crons": [
-    {
-      "path": "/api/update-rate",
-      "schedule": "0 6 * * *"
-    }
+  "rewrites": [
+    { "source": "/supabase.min.js", "destination": "/supabase.min.js" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

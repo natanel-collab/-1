@@ -813,6 +813,10 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
         <div id="bud-list"></div>
       </div>
 
+      <div class="card glass" id="motiv-card" style="display:none">
+        <div id="motiv-content"></div>
+      </div>
+
       <div class="card glass">
         <div class="card-head">📊 הוצאות שבועיות</div>
         <div class="bars" id="wk-bars"></div>
@@ -2179,6 +2183,88 @@ function exportCSV(){
 }
 
 // ════ RENDER ════
+function renderMotivation(){
+  const card=C('motiv-card');
+  const cnt=C('motiv-content');
+  if(!card||!cnt)return;
+  
+  const today=new Date();
+  const todayStr=today.toISOString().split('T')[0];
+  
+  // Calculate streak: consecutive days without expense > 100
+  let streak=0;
+  const sortedDays=[];
+  for(let i=0;i<30;i++){
+    const d=new Date(today);
+    d.setDate(d.getDate()-i);
+    const dStr=d.toISOString().split('T')[0];
+    const dayExp=txs.filter(t=>t.type==='expense'&&t.date?.substring(0,10)===dStr).reduce((s,t)=>s+t.amount,0);
+    sortedDays.push({date:dStr,exp:dayExp});
+    if(i===0&&dayExp<100){streak=1;continue;}
+    if(dayExp<100&&streak>0)streak++;
+    else if(i>0&&dayExp>=100)break;
+  }
+  
+  // Calculate this week vs last week
+  const weekAgo=new Date(today);weekAgo.setDate(weekAgo.getDate()-7);
+  const twoWeeksAgo=new Date(today);twoWeeksAgo.setDate(twoWeeksAgo.getDate()-14);
+  
+  const thisWeekExp=txs.filter(t=>{
+    const d=new Date(t.date);
+    return t.type==='expense'&&d>=weekAgo&&d<=today;
+  }).reduce((s,t)=>s+t.amount,0);
+  
+  const lastWeekExp=txs.filter(t=>{
+    const d=new Date(t.date);
+    return t.type==='expense'&&d>=twoWeeksAgo&&d<weekAgo;
+  }).reduce((s,t)=>s+t.amount,0);
+  
+  // Build messages
+  const messages=[];
+  
+  // Streak message
+  if(streak>=7){
+    messages.push({icon:'🔥',title:streak+' ימים ברצף!',sub:'יום אחרי יום של הוצאות מצומצמות',color:'#ff9f0a'});
+  } else if(streak>=3){
+    messages.push({icon:'⚡',title:streak+' ימים של חסכון',sub:'תמשיך ככה לשבוע שלם!',color:'#ffd60a'});
+  } else if(streak>=1){
+    messages.push({icon:'✨',title:'יום של חסכון',sub:'מתחילים רצף!',color:'#30d158'});
+  }
+  
+  // Week comparison message
+  if(lastWeekExp>0&&thisWeekExp>0){
+    const diff=thisWeekExp-lastWeekExp;
+    const pct=Math.round((diff/lastWeekExp)*100);
+    if(pct<=-10){
+      messages.push({icon:'💪',title:'חסכת '+Math.abs(pct)+'% השבוע!',sub:'₪'+fmt(Math.abs(diff))+' פחות מהשבוע שעבר',color:'#30d158'});
+    } else if(pct>=20){
+      messages.push({icon:'⚠️',title:'הוצאת '+pct+'% יותר השבוע',sub:'תפקח עין על ההוצאות',color:'#ff453a'});
+    }
+  }
+  
+  // No expenses today
+  const todayExp=txs.filter(t=>t.type==='expense'&&t.date?.substring(0,10)===todayStr).reduce((s,t)=>s+t.amount,0);
+  if(todayExp===0&&messages.length===0){
+    messages.push({icon:'🎯',title:'יום נקי מהוצאות',sub:'תמשיך לשמור על הקצב',color:'#0a84ff'});
+  }
+  
+  if(messages.length===0){
+    card.style.display='none';
+    return;
+  }
+  
+  card.style.display='block';
+  cnt.innerHTML=messages.map(m=>`
+    <div style="display:flex;align-items:center;gap:.85rem;padding:.3rem 0">
+      <div style="font-size:2rem;flex-shrink:0">${m.icon}</div>
+      <div style="flex:1">
+        <div style="font-size:.95rem;font-weight:700;color:${m.color}">${m.title}</div>
+        <div style="font-size:.75rem;color:var(--txt2);margin-top:.15rem">${m.sub}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
 function renderBalance(){
   const inc=sumT(txs,'income'),exp=sumT(txs,'expense'),inv=sumT(txs,'invest');
   const totalSav=getTotalSavings();
@@ -2413,7 +2499,7 @@ function renderGoals(){
 
 function render(){
   C('m-lbl').textContent=MHE[cM]+' '+cY;
-  renderBalance();renderHomeGoals();renderWeekBars();
+  renderBalance();renderHomeGoals();renderWeekBars();renderMotivation();
   renderInvPortfolio();renderBudget();renderHomeTxs();
   renderStats();renderHistory();renderGoals();
   if(C('v-invest').classList.contains('on'))renderInvestTab();

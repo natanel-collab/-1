@@ -775,6 +775,7 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
           <div class="bal-item">
             <div class="bal-item-lbl"><div class="bal-dot" style="background:var(--red)"></div>הוצאות</div>
             <div class="bal-item-val" style="color:var(--red)" id="m-exp">₪0</div>
+            <div id="m-exp-future" style="font-size:.62rem;color:#ffd60a;margin-top:.2rem;display:none">+₪0 עתידי</div>
           </div>
           <div class="bal-item">
             <div class="bal-item-lbl"><div class="bal-dot" style="background:var(--pur)"></div>השקעות</div>
@@ -2187,6 +2188,14 @@ function renderBalance(){
   const mt=mTxs();
   C('m-inc').textContent='₪'+fmt(sumT(mt,'income'));
   C('m-exp').textContent='₪'+fmt(sumT(mt,'expense'));
+  // Show future expenses for current month
+  const today=new Date().toISOString().split('T')[0];
+  const futureExp=mt.filter(t=>t.type==='expense'&&t.date?.substring(0,10)>today).reduce((s,t)=>s+t.amount,0);
+  const fe=C('m-exp-future');
+  if(fe){
+    if(futureExp>0){fe.textContent='+₪'+fmt(futureExp)+' עתידי';fe.style.display='block';}
+    else fe.style.display='none';
+  }
   C('m-inv').textContent='₪'+fmt(sumT(txs,'invest')); // all-time invest
   C('m-sav').textContent='₪'+fmt(totalSav);
   const cashEl=C('m-cash');if(cashEl)cashEl.textContent='₪'+fmt(cashBalance);

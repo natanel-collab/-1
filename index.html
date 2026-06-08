@@ -2005,17 +2005,18 @@ function toggleTxActions(id){
 function rw(w){if(w)w.classList.remove('sw');}
 // tx swipe init - called from initApp
 async function delTx(id){
-  // Optimistic update - remove from UI immediately
-  txs=txs.filter(t=>t.id!==id);
+  // id comes as string from button - find matching tx (handle both string/number id)
+  const before=txs.length;
+  txs=txs.filter(t=>String(t.id)!==String(id));
+  if(txs.length===before){toast('עסקה לא נמצאה');return;}
   render();
-  toast('עסקה נמחקה');
-  // Then delete from DB in background
-  try{
-    await sb.from('transactions').delete().eq('id',id);
-  }catch(e){
-    // If DB delete fails, show error but keep local state
-    console.error('Delete failed:',e);
-    toast('שגיאה במחיקה — נסה שוב');
+  // Delete from DB
+  const {error}=await sb.from('transactions').delete().eq('id',id);
+  if(error){
+    toast('שגיאה: '+error.message);
+    await loadUserData();
+  } else {
+    toast('עסקה נמחקה ✓');
   }
 }
 

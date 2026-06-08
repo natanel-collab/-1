@@ -2242,6 +2242,25 @@ function renderMotivation(){
     }
   }
   
+  // Budget warnings count
+  const mt=mTxs();
+  const totsByCat={};
+  mt.filter(t=>t.type==='expense').forEach(t=>{totsByCat[t.category]=(totsByCat[t.category]||0)+t.amount;});
+  let warnCount=0,exceedCount=0;
+  Object.keys(buds).forEach(cat=>{
+    const b=buds[cat];
+    if(!b)return;
+    const s=totsByCat[cat]||0;
+    const p=s/b*100;
+    if(p>=100)exceedCount++;
+    else if(p>=80)warnCount++;
+  });
+  if(exceedCount>0){
+    messages.push({icon:'🚨',title:'חרגת מתקציב ב-'+exceedCount+' '+(exceedCount===1?'קטגוריה':'קטגוריות'),sub:'בדוק את התקציב כדי להחזיר שליטה',color:'#ff453a'});
+  } else if(warnCount>0){
+    messages.push({icon:'⚠️',title:'מתקרב לתקציב ב-'+warnCount+' '+(warnCount===1?'קטגוריה':'קטגוריות'),sub:'נשארו מעל 80% מהתקציב החודשי',color:'#ffd60a'});
+  }
+  
   // No expenses today
   const todayExp=txs.filter(t=>t.type==='expense'&&t.date?.substring(0,10)===todayStr).reduce((s,t)=>s+t.amount,0);
   if(todayExp===0&&messages.length===0){
@@ -2359,7 +2378,12 @@ function renderBudget(){
     const cls=pct>=90?' danger':pct>=70?' warn':'';
     if(budEdit)return `<div class="bud-row"><div class="bud-top"><div class="bud-name">${c.i} ${cat}</div><div style="display:flex;align-items:center;gap:.3rem"><span style="font-size:.72rem;color:var(--txt2)">₪</span><input class="bud-inp" type="number" value="${buds[cat]||0}" onchange="setBud('${cat}',this.value)" min="0"></div></div></div>`;
     if(!bud)return `<div class="bud-row"><div class="bud-top"><div class="bud-name" style="color:var(--txt)">${c.i} ${cat}</div><div style="font-size:.65rem;color:var(--txt3)">לא הוגדר — לחץ עריכה</div></div></div>`;
-    return `<div class="bud-row"><div class="bud-top"><div class="bud-name">${c.i} ${cat}</div><div class="bud-amt" style="color:${pct>=90?'var(--red)':pct>=70?'var(--ylw)':'var(--txt2)'}">₪${fmt(spent)} / ₪${fmt(bud)}</div></div><div class="ptrack"><div class="pfill${cls}" style="width:${pct}%;background:${c.c}"></div></div></div>`;
+    const remaining=bud-spent;
+    let warnText='';
+    if(pct>=100){warnText=`<div style="font-size:.7rem;color:var(--red);margin-top:.3rem;font-weight:600">🚨 חרגת ב-₪${fmt(spent-bud)}</div>`;}
+    else if(pct>=90){warnText=`<div style="font-size:.7rem;color:var(--red);margin-top:.3rem">⚠️ ${pct}% — נשארו ₪${fmt(remaining)}</div>`;}
+    else if(pct>=70){warnText=`<div style="font-size:.7rem;color:var(--ylw);margin-top:.3rem">⚠️ ${pct}% — נשארו ₪${fmt(remaining)}</div>`;}
+    return `<div class="bud-row"><div class="bud-top"><div class="bud-name">${c.i} ${cat}</div><div class="bud-amt" style="color:${pct>=90?'var(--red)':pct>=70?'var(--ylw)':'var(--txt2)'}">₪${fmt(spent)} / ₪${fmt(bud)}</div></div><div class="ptrack"><div class="pfill${cls}" style="width:${Math.min(pct,100)}%;background:${c.c}"></div></div>${warnText}</div>`;
   }).join('');
 }
 

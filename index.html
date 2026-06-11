@@ -707,7 +707,11 @@ body{font-family:'Heebo',-apple-system,sans-serif;background:var(--bg);color:var
       return ch;
     }
 
-    return{from:from,auth:auth,channel:channel};
+    return{from:from,auth:auth,channel:channel,
+      rpc:function(fnName,params){
+        return doFetch('POST','/rest/v1/rpc/'+fnName,params||{});
+      }
+    };
   }
 
   window.supabase={createClient:createClient};
